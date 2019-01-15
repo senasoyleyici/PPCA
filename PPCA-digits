@@ -1,0 +1,112 @@
+import numpy as np
+import scipy as sp
+import scipy . optimize as opt
+import scipy.stats as stats
+from matplotlib import pyplot as plt
+import sklearn.datasets as ds
+import os
+%matplotlib inline
+import matplotlib.cm as plt_cm
+import matplotlib.colors as plt_col
+
+def plot_digits(x, classes, ax=None):
+    xx = x[0, :]
+    yy = x[1, :]
+    width = np.max(xx) - np.min(xx)
+    height = np.max(yy) - np.min(yy)
+    ax = plt.gca() if ax is None else ax
+    ax.set_xlim([np.min(xx) - 0.1 * width, np.max(xx) + 0.1 * width])
+    ax.set_ylim([np.min(yy) - 0.1 * height, np.max(yy) + 0.1 * height])
+    cmap = plt_cm.jet
+    norm = plt_col.Normalize(vmin=0, vmax=9)
+    mapper = plt_cm.ScalarMappable(cmap=cmap, norm=norm)
+    colors = mapper.to_rgba(range(10))
+    for x1, x2, digit in zip(xx, yy, classes):
+        ax.text(x1, x2, digit, color=colors[int(digit)])
+         
+    
+def plot_grid(n, ncols=4, size=(5, 5)):
+    nrows = int(np.ceil(n/float(ncols)))
+    fig, ax = plt.subplots(nrows=nrows, ncols=ncols, figsize=(size[0]*ncols, size[1]*nrows))
+    ax = ax.ravel()
+    return [fig, ax]
+
+
+np.random.seed(0)
+digits = ds.load_digits()
+X = np.random.choice(range(digits.data.shape[0]), 64)
+Y = np.transpose(digits.data[X, :])
+digits_classes = digits.target[X]
+
+print ("Y",Y.shape)
+
+"""
+fig, ax = plt.subplots(nrows=2, ncols=5, figsize=[15, 10])
+ax = ax.flatten()
+for i in range(10):
+    ax[i].matshow(digits.images[i], cmap=plt_cm.gray)
+plt.show()
+"""
+
+
+#mean = (0, 0)
+#cov = [[1, 0], [0, 1]]
+#A = np.random.multivariate_normal(mean, cov, 10)
+
+#x= np.linspace(0, 4*np.pi, 200)
+#x1 = np.sin(x) - x*np.cos(x)
+#x2 = np.cos(x) + x*np.sin(x)
+
+#X = np.vstack((x1,x2)).T
+#Y = np.dot(X, A.T).T 
+
+print(np.cov(X.T))
+
+Y_mean = Y.mean(axis=1)[:,None]
+Y= Y-Y_mean 
+
+S = np.cov(Y,bias=1) 
+print ("S", S.shape)
+
+print(X.mean)
+
+sigma = 5
+sigmap = 10
+N= 64
+
+def f(W):
+  W = np.reshape(W,(64,70))
+  I = sigma**2 * np.eye(64)
+  #C = np.dot(W,W.T)+ I 
+  #C = np.dot(W,np.dot (sigmap*np.eye(70),W.T)) + I 
+  C = np.dot(W,W.T) + I 
+  det = np.log(np.linalg.det(C))
+  trace =  np.trace(np.dot(np.linalg.inv(C), S))
+  return N*(det + trace)
+
+def dfx(W):
+  W = np.reshape(W,(64,70))
+  I = sigma**2 * np.eye(64)
+  #C = np.dot(W,W.T)+ I 
+  #C = np.dot(W,np.dot(sigmap*np.eye(70),W.T)) + I 
+  C = np.dot(W,W.T) + I             
+  bir= np.dot(np.linalg.inv(C),S)
+  iki= np.dot(np.linalg.inv(C),W)  
+  üç= np.dot (bir,iki)
+  val = -N*(üç-iki) #  -N ( c--1*SC-1W - c-1 W)
+  val = np.reshape (val,(4480,))
+  return val
+                
+
+#w0 = np.random.normal(0, 1, 1280)
+w0=  np.random.choice(range(digits.data.shape[0]), 4480)
+W_star = opt.fmin_cg(f, w0, fprime=dfx)
+#print (W_star.shape)
+W_star = W_star.reshape(64, 70)
+X_hat = np.dot(np.linalg.inv(np.dot(W_star.T,W_star)), np.dot (W_star.T, Y+Y_mean)).T
+print((Y + Y_mean).shape )
+print (X_hat.shape)
+
+    
+plot_digits(X_hat, digits_classes)
+plt.show()
