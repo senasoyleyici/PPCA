@@ -19,7 +19,7 @@ class Kernell:
         """
         return X.T.dot(X)
     @staticmethod
-    def polynomial(X, p=3, c=1.):
+    def polynomial(X, p=2, c=1.):
         """
         Compute polynomial kernel of given data.
         :param p: degree of kernel
@@ -27,7 +27,7 @@ class Kernell:
         """
         return np.power(X.T.dot(X) + c, p)
     @staticmethod
-    def RBF(X, sigma=0.9):
+    def RBF(X, sigma=15):
         """
         Compute RBF kernel of given data.
         """
@@ -105,18 +105,47 @@ if __name__ == "__main__":
 
 	#X = np.array([[0., 2., 3., 1., 1., 0.], [2., 0., 1., 0., 5., 8.], [1., 4., 2., 2., 5., 3.]])
 	print(X.shape)
+	X = X.T
 	print('KPCA reducing dimension from %d to %d.' % (X.shape[1], q))
+	print(X)
 	X = center_data(X)
 	#print(X)
 
 	p_lin = fit_transform(Kernell.linear(X), q)
 	print('Linear.')
 	print(p_lin)
+	#plt.plot(p_lin[:,0],p_lin[:,1],'ro')
+	#plt.show()
+	colorsToUse = np.zeros((38,3))
+	for i in range(0,38):
+		if p_lin[i,0] <5 :
+			if  p_lin[i,1]< 2.5:
+				colorsToUse [i,0]=1
+			else:
+				colorsToUse [i,1]=1
+		else:
+			colorsToUse [i,2]=1
+                
+	#print(color)       
+	for i in range(0,38):
+		plt.scatter(p_lin[i,0],p_lin[i,1],color = colorsToUse[i,:]) #,c = color[i,:]
+	plt.show()
     
 	p_pol = fit_transform(Kernell.polynomial(X), q)
 	print('Polynomial.')
 	print(p_pol)
+	for i in range(0,38):
+		plt.scatter(p_pol[i,0],p_pol[i,1],color = colorsToUse[i,:]) #,c = color[i,:]
+	plt.show()
     
 	p_rbf = fit_transform(Kernell.RBF(X), q)
 	print('RBF.')
-	print(p_rbf)		
+	print(p_rbf)
+	#plt.plot(p_rbf[:,0],p_rbf[:,1],'go')
+	#plt.show()
+    
+	for i in range(0,38):
+		plt.scatter(p_rbf[i,0],p_rbf[i,1],color = colorsToUse[i,:]) #,c = color[i,:]
+	plt.show()
+    
+    
